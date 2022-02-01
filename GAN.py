@@ -96,7 +96,7 @@ loss = nn.BCELoss()
 discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
 generator_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
 
-batch_size = training_parameters["batch_size"]
+
 
 for epoch_idx in range(training_parameters["n_epochs"]):
     G_loss = []
