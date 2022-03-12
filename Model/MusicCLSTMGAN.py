@@ -65,7 +65,7 @@ class LSTM_Generator_Model(nn.Module):
         return out
 
 
-sequence_length = 396
+sequence_length = 199 #396
 input_size = 12
 hidden_size = 128
 num_layers = 2
@@ -88,31 +88,33 @@ for epoch_idx in range(training_parameters["n_epochs"]):
     for batch_idx, data_input in enumerate(data_loader):
         
         # Generate noise and move it the device
-        noise = torch.randn(training_parameters["batch_size"],sequence_length,noise_size).to(device)
-        # classes = torch.randint(0,10,(training_parameters["batch_size"],)).repeat(1,sequence_length,1).view(training_parameters["batch_size"],sequence_length,1).to(device)
         classes = data_input["Melody"]
+        print(classes.size())
+        batch_size = classes.size(dim=0)
+        noise = torch.randn(batch_size,sequence_length,noise_size).to(device)
+        # classes = torch.randint(0,10,(training_parameters["batch_size"],)).repeat(1,sequence_length,1).view(training_parameters["batch_size"],sequence_length,1).to(device)
         noise = torch.cat((noise,classes),2)
         # Forward pass     
         generated_data = generator(noise)
-        generated_data = generated_data.view(training_parameters["batch_size"],sequence_length,output_size) # batch_size X 784
+        generated_data = generated_data.view(batch_size,sequence_length,output_size) # batch_size X 784
         generated_data = torch.cat((generated_data,classes),2)
 
-        true_data = data_input["Melody"].view(training_parameters["batch_size"], sequence_length, input_size) # batch_size X 784
-        digit_labels = data_input["Chords"].view(training_parameters["batch_size"],sequence_length,output_size)
+        true_data = data_input["Melody"].view(batch_size, sequence_length, input_size) # batch_size X 784
+        digit_labels = data_input["Chords"].view(batch_size,sequence_length,output_size)
         true_data = torch.cat((true_data,digit_labels),2).to(device)
-        true_labels = torch.ones(training_parameters["batch_size"]).to(device)
+        true_labels = torch.ones(batch_size).to(device)
         
         # Clear optimizer gradients        
         discriminator_optimizer.zero_grad()
         # Forward pass with true data as input
-        discriminator_output_for_true_data = discriminator(true_data).view(training_parameters["batch_size"])
+        discriminator_output_for_true_data = discriminator(true_data).view(batch_size)
         # Compute Loss
         true_discriminator_loss = loss(discriminator_output_for_true_data, true_labels)
         # Forward pass with generated data as input
-        discriminator_output_for_generated_data = discriminator(generated_data.detach()).view(training_parameters["batch_size"])
+        discriminator_output_for_generated_data = discriminator(generated_data.detach()).view(batch_size)
         # Compute Loss 
         generator_discriminator_loss = loss(
-            discriminator_output_for_generated_data, torch.zeros(training_parameters["batch_size"]).to(device)
+            discriminator_output_for_generated_data, torch.zeros(batch_size).to(device)
         )
         # Average the loss
         discriminator_loss = (
@@ -131,11 +133,11 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         generator_optimizer.zero_grad()
         
         # It's a choice to generate the data again
-        generated_data = generator(noise).view(training_parameters["batch_size"],sequence_length,output_size) # batch_size X 784
+        generated_data = generator(noise).view(batch_size,sequence_length,output_size) # batch_size X 784
         generated_data = torch.cat((generated_data,classes),2)
         # Forward pass with the generated data
         #print(generated_data.size())
-        discriminator_output_on_generated_data = discriminator(generated_data).view(training_parameters["batch_size"])
+        discriminator_output_on_generated_data = discriminator(generated_data).view(batch_size)
         # Compute loss
         generator_loss = loss(discriminator_output_on_generated_data, true_labels)
         # Backpropagate losses for Generator model.
@@ -148,10 +150,11 @@ for epoch_idx in range(training_parameters["n_epochs"]):
             print("Training Steps Completed: ", batch_idx)
             
             with torch.no_grad():
-                noise = torch.randn(training_parameters["batch_size"],sequence_length,noise_size)
-                classes = data_input["Melody"]                
+                classes = data_input["Melody"] 
+                batch_size = classes.size(dim=0)
+                noise = torch.randn(batch_size,sequence_length,noise_size)
                 noise = torch.cat((noise,classes),2).to(device)
-                generated_data = generator(noise).cpu().view(training_parameters["batch_size"], sequence_length, output_size)
+                generated_data = generator(noise).cpu().view(batch_size, sequence_length, output_size)
                 for x in generated_data:
                     print(x)
                     break

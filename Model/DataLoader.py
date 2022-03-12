@@ -17,7 +17,7 @@ class MusicDataset(Dataset):
             chord = f.iloc[:,[i for i in range(12,36)]].values
             chord = torch.tensor(chord)
             length = f.shape[0]
-            if length < 400:
+            if length < 200:
                 self.chords.append(chord)
                 self.melody.append(melody)
                 lengths.append(f.shape[0])
