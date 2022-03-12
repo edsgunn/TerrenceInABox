@@ -6,7 +6,7 @@ def constrainNote(note):
     nums = "0123456789"
     for char in nums:
         note = note.replace(char,"")
-    note = note.replace("rest","r")
+    # note = note.replace("rest","r")
     return note
 
 chord_map = {
@@ -90,6 +90,7 @@ major = {"C":["C","E","G"],
         "F":["F","A","C"],
         "F#":["F#","A#","C#"],
         "G":["G","B","D"],
+        "G#":["Ab","C","Eb"],
         "Ab":["Ab","C","Eb"],
         "A":["A","C#","E"],
         "Bb":["Bb","D","F"],
@@ -103,6 +104,7 @@ minor = {"C":["C","Eb","G"],
         "F":["F","Ab","C"],
         "F#":["F#","A","C#"],
         "G":["G","Bb","D"],
+        "G#":["Ab","Cb","Eb"],
         "Ab":["Ab","Cb","Eb"],
         "A":["A","C","E"],
         "Bb":["Bb","Db","F"],
@@ -117,7 +119,7 @@ sig = Piano
 
 beat = 1.25e2 # 120 bpm
 
-f = pd.read_csv("Model/dataset/csv_train/Hey Jude.csv")
+f = pd.read_csv("Model/dataset/csv_train/Hey soul sister.csv")
 print(f[["note_root","note_duration","chord_root","key_mode"]])
 time_sig = f["time"][0]
 beats = int(time_sig[0])
@@ -130,16 +132,16 @@ chord3 = ""
 current_meansure = 0
 for index, row in f.iterrows():
     note = row["note_root"]
-    
-    # for i,char in enumerate(note):
-    #     if char in nums:
-    #         note = note.replace(char,str(int(char)+4))
-    note = constrainNote(note)
     duration = row["note_duration"]
-    tune += f"{note}={duration} "
+    
+    if note == "rest":
+        tune += f"r={duration} "
+    else:
+        note = constrainNote(note)
+        tune += f"{note}4={duration} "
     if row["measure"] != current_meansure:
         chord_root = row["chord_root"]
-        if chord_root == "[]":
+        if chord_root == "[]" or chord_root == "null":
             chord1 += f"r={measure} "
             chord2 += f"r={measure} "
             chord3 += f"r={measure} "
@@ -147,14 +149,20 @@ for index, row in f.iterrows():
             chord_root = constrainNote(chord_root)
             key_mode = chord_map[row["chord_type"]]
             chord = chords[key_mode][chord_root]
-            chord1 += f"{chord[0]}={measure} "
-            chord2 += f"{chord[1]}={measure} "
-            chord3 += f"{chord[2]}={measure} "
+            # print(chord)
+            chord1 += f"{chord[0]}4={measure} "
+            chord2 += f"{chord[1]}4={measure} "
+            chord3 += f"{chord[2]}4={measure} "
         current_meansure += 1
+print(tune)
+print(chord1)
+print(chord2)
+print(chord3)
 m = Piano(tune, duration=beat)
 c1 = Piano(chord1, duration=beat)
 c2 = Piano(chord2, duration=beat)
 c3 = Piano(chord3, duration=beat)
 s = m + c1 + c2 + c3
 
-s.play()
+s.play(max_amplitude=1)
+print("Finished")

@@ -8,11 +8,11 @@ class Piano(Oscillator):
     
     def pianoWave(freq,X):
 
-        Y = 0.5*np.sin(X)* np.exp(-0.0015 * X)
-        Y += 0.3*np.sin(2*X)* np.exp(-0.0015 * X)
-        Y += 0.2*np.sin(3*X)* np.exp(-0.0015 * X)
+        Y = 0.6*np.sin(X)* np.exp(-0.0015 * X)
+        Y += 0.4*np.sin(2*X)* np.exp(-0.0015 * X)
+        # Y += 0.2*np.sin(3*X)* np.exp(-0.0015 * X)
         Y += Y*Y*Y
-        Y *= 1 + 16 * X * np.exp(-6*X/freq)/freq
+        Y *= 1 + 16 * X * np.exp(-6*X)
         return Y
 
     def generate(self, sample_rate):

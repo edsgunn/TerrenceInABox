@@ -24,77 +24,13 @@ data_loader = torch.utils.data.DataLoader(
   batch_size=training_parameters["batch_size"], shuffle=True)
 
 
-class GeneratorModel(nn.Module):
-  
-  def __init__(self):
-    super(GeneratorModel, self).__init__()
-    input_dim = 100
-    output_dim = 784
-    self.hidden_layer1 = nn.Sequential(
-    nn.Linear(input_dim, 256),
-    nn.LeakyReLU(0.2)
-    )
-    self.hidden_layer2 = nn.Sequential(
-    nn.Linear(256, 512),
-    nn.LeakyReLU(0.2)
-    )
-    self.hidden_layer3 = nn.Sequential(
-    nn.Linear(512, 1024),
-    nn.LeakyReLU(0.2)
-    )
-    self.output_layer = nn.Sequential(
-    nn.Linear(1024, output_dim),
-    nn.Tanh()
-    )
-    
-  def forward(self, x):
-    output = self.hidden_layer1(x)
-    output = self.hidden_layer2(output)
-    output = self.hidden_layer3(output)
-    output = self.output_layer(output)
-    return output.to(device)
-
-
-class DiscriminatorModel(nn.Module):
-  
-  def __init__(self):
-    super(DiscriminatorModel, self).__init__()
-    input_dim = 784
-    output_dim = 1
-    self.hidden_layer1 = nn.Sequential(
-    nn.Linear(input_dim, 1024),
-    nn.LeakyReLU(0.2),
-    nn.Dropout(0.3)
-    )
-    self.hidden_layer2 = nn.Sequential(
-    nn.Linear(1024, 512),
-    nn.LeakyReLU(0.2),
-    nn.Dropout(0.3)
-    )
-    self.hidden_layer3 = nn.Sequential(
-    nn.Linear(512, 256),
-    nn.LeakyReLU(0.2),
-    nn.Dropout(0.3)
-    )
-    self.output_layer = nn.Sequential(
-    nn.Linear(256, output_dim),
-    nn.Sigmoid()
-    )
-    
-  def forward(self, x):
-    output = self.hidden_layer1(x)
-    output = self.hidden_layer2(output)
-    output = self.hidden_layer3(output)
-    output = self.output_layer(output)
-    return output.to(device)
-
 class LSTM_Discriminator_Model(nn.Module):
   
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes, output_size):
         super(LSTM_Discriminator_Model, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size+num_classes, hidden_size, num_layers, batch_first=True, bidirectional=True)
         self.fc = nn.Sequential(
             nn.Linear(hidden_size, output_size),
             nn.Sigmoid()
@@ -114,11 +50,11 @@ class LSTM_Discriminator_Model(nn.Module):
 
 class LSTM_Generator_Model(nn.Module):
   
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes, output_size):
         super(LSTM_Generator_Model, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size+num_classes, hidden_size, num_layers, batch_first=True, bidirectional=True)
         self.fc = nn.Sequential(
             nn.Linear(hidden_size, output_size),
             nn.Tanh()
@@ -142,9 +78,10 @@ input_size = 28
 hidden_size = 128
 num_layers = 2
 output_size = 28*28
+num_classes = 1
 learning_rate = 0.01
-discriminator = LSTM_Discriminator_Model(input_size, hidden_size, num_layers, 1)
-generator = LSTM_Generator_Model(input_size, hidden_size, num_layers, output_size)
+discriminator = LSTM_Discriminator_Model(input_size, hidden_size, num_layers, num_classes, 1)
+generator = LSTM_Generator_Model(input_size, hidden_size, num_layers, num_classes, output_size)
 discriminator.to(device)
 generator.to(device)
 loss = nn.BCELoss()
@@ -160,11 +97,15 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         
         # Generate noise and move it the device
         noise = torch.randn(training_parameters["batch_size"],sequence_length,input_size).to(device)
+        classes = torch.randint(0,10,(training_parameters["batch_size"],)).repeat(1,sequence_length,1).view(training_parameters["batch_size"],sequence_length,1).to(device)
+        noise = torch.cat((noise,classes),2)
         # Forward pass         
         generated_data = generator(noise).view(training_parameters["batch_size"],sequence_length,input_size) # batch_size X 784
-        
-        true_data = data_input[0].view(training_parameters["batch_size"], sequence_length, input_size).to(device) # batch_size X 784
-        digit_labels = data_input[1] # batch_size
+        generated_data = torch.cat((generated_data,classes),2)
+
+        true_data = data_input[0].view(training_parameters["batch_size"], sequence_length, input_size) # batch_size X 784
+        digit_labels = data_input[1].repeat(1,sequence_length).view(training_parameters["batch_size"],sequence_length,1)
+        true_data = torch.cat((true_data,digit_labels),2).to(device)
         true_labels = torch.ones(training_parameters["batch_size"]).to(device)
         
         # Clear optimizer gradients        
@@ -197,6 +138,7 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         
         # It's a choice to generate the data again
         generated_data = generator(noise).view(training_parameters["batch_size"],sequence_length,input_size) # batch_size X 784
+        generated_data = torch.cat((generated_data,classes),2)
         # Forward pass with the generated data
         #print(generated_data.size())
         discriminator_output_on_generated_data = discriminator(generated_data).view(training_parameters["batch_size"])
@@ -212,8 +154,10 @@ for epoch_idx in range(training_parameters["n_epochs"]):
             print("Training Steps Completed: ", batch_idx)
             
             with torch.no_grad():
-                noise = torch.randn(training_parameters["batch_size"],sequence_length,input_size).to(device)
-                generated_data = generator(noise).cpu().view(training_parameters["batch_size"], 28, 28)
+                noise = torch.randn(training_parameters["batch_size"],sequence_length,input_size)
+                classes = torch.randint(0,10,(training_parameters["batch_size"],)).repeat(1,sequence_length,1).view(training_parameters["batch_size"],sequence_length,1)
+                noise = torch.cat((noise,classes),2).to(device)
+                generated_data = generator(noise).cpu().view(training_parameters["batch_size"], sequence_length, input_size)
                 for x in generated_data:
                     plt.imshow(x.detach().numpy(), interpolation='nearest',cmap='gray')
                     plt.show()
@@ -223,3 +167,4 @@ for epoch_idx in range(training_parameters["n_epochs"]):
 
     print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
             (epoch_idx), training_parameters["n_epochs"], torch.mean(torch.FloatTensor(D_loss)), torch.mean(torch.FloatTensor(G_loss))))
+    
