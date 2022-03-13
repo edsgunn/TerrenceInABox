@@ -2,15 +2,16 @@
 
 import torch
 import torch.nn as nn
-from torchvision import transforms, datasets
+# from torchvision import transforms
 from torch import optim as optim
 from matplotlib import pyplot as plt
 from DataLoader import MusicDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 training_parameters = {
-    "n_epochs": 100,
+    "n_epochs": 1000,
     "batch_size": 10,
 }
 
@@ -70,7 +71,7 @@ input_size = 12
 hidden_size = 128
 num_layers = 2
 output_size = 24
-noise_size = 12
+noise_size = 4
 learning_rate = 0.01
 discriminator = LSTM_Discriminator_Model(input_size+output_size, hidden_size, num_layers, 1)
 generator = LSTM_Generator_Model(input_size+noise_size, hidden_size, num_layers, output_size*sequence_length)
@@ -88,8 +89,7 @@ for epoch_idx in range(training_parameters["n_epochs"]):
     for batch_idx, data_input in enumerate(data_loader):
         
         # Generate noise and move it the device
-        classes = data_input["Melody"]
-        print(classes.size())
+        classes = data_input["Melody"].to(device)
         batch_size = classes.size(dim=0)
         noise = torch.randn(batch_size,sequence_length,noise_size).to(device)
         # classes = torch.randint(0,10,(training_parameters["batch_size"],)).repeat(1,sequence_length,1).view(training_parameters["batch_size"],sequence_length,1).to(device)
@@ -150,7 +150,7 @@ for epoch_idx in range(training_parameters["n_epochs"]):
             print("Training Steps Completed: ", batch_idx)
             
             with torch.no_grad():
-                classes = data_input["Melody"] 
+                classes = data_input["Melody"]
                 batch_size = classes.size(dim=0)
                 noise = torch.randn(batch_size,sequence_length,noise_size)
                 noise = torch.cat((noise,classes),2).to(device)
