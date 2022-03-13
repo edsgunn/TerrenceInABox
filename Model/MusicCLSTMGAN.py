@@ -2,79 +2,35 @@
 
 import torch
 import torch.nn as nn
-# from torchvision import transforms
 from torch import optim as optim
 from matplotlib import pyplot as plt
 from DataLoader import MusicDataset
+from Discriminator import LSTM_Discriminator_Model
+from Generator import LSTM_Generator_Model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device)
+print("Running on:",device)
 
 training_parameters = {
     "n_epochs": 1000,
     "batch_size": 10,
 }
 
-data_loader = torch.utils.data.DataLoader(MusicDataset(),batch_size=training_parameters["batch_size"], shuffle=True)
-
-class LSTM_Discriminator_Model(nn.Module):
-  
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
-        super(LSTM_Discriminator_Model, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=False)
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_size, output_size),
-            nn.Sigmoid()
-        )
-        pass
-    
-    def forward(self, x):
-        # Set initial hidden and cell states 
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) 
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
-        # Passing in the input and hidden state into the model and  obtaining outputs
-        out, hidden = self.lstm(x, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
-        
-        #Reshaping the outputs such that it can be fit into the fully connected layer
-        out = self.fc(out[:, -1, :])
-        return out
-
-class LSTM_Generator_Model(nn.Module):
-  
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
-        super(LSTM_Generator_Model, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=False)
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_size, output_size),
-            nn.Tanh()
-        )
-        pass
-    
-    def forward(self, x):
-        # Set initial hidden and cell states 
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) 
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
-        # Passing in the input and hidden state into the model and  obtaining outputs
-        out, hidden = self.lstm(x, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
-        
-        #Reshaping the outputs such that it can be fit into the fully connected layer
-        out = self.fc(out[:, -1, :])
-        return out
 
 
-sequence_length = 199 #396
 input_size = 12
 hidden_size = 128
 num_layers = 2
 output_size = 24
 noise_size = 4
-learning_rate = 0.01
-discriminator = LSTM_Discriminator_Model(input_size+output_size, hidden_size, num_layers, 1)
-generator = LSTM_Generator_Model(input_size+noise_size, hidden_size, num_layers, output_size*sequence_length)
+max_sequence_length = 200
+
+dataset = MusicDataset(max_sequence_length)
+data_loader = torch.utils.data.DataLoader(dataset,batch_size=training_parameters["batch_size"], shuffle=True)
+
+sequence_length = dataset.max_length
+discriminator = LSTM_Discriminator_Model(device, input_size+output_size, hidden_size, num_layers, 1)
+generator = LSTM_Generator_Model(device ,input_size+noise_size, hidden_size, num_layers, output_size*sequence_length)
 discriminator.to(device)
 generator.to(device)
 loss = nn.BCELoss()
@@ -82,7 +38,8 @@ discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
 generator_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
 
 
-
+Overall_G_Loss = []
+Overall_D_loss = []
 for epoch_idx in range(training_parameters["n_epochs"]):
     G_loss = []
     D_loss = []
@@ -92,14 +49,13 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         classes = data_input["Melody"].to(device)
         batch_size = classes.size(dim=0)
         noise = torch.randn(batch_size,sequence_length,noise_size).to(device)
-        # classes = torch.randint(0,10,(training_parameters["batch_size"],)).repeat(1,sequence_length,1).view(training_parameters["batch_size"],sequence_length,1).to(device)
         noise = torch.cat((noise,classes),2)
         # Forward pass     
         generated_data = generator(noise)
-        generated_data = generated_data.view(batch_size,sequence_length,output_size) # batch_size X 784
+        generated_data = generated_data.view(batch_size,sequence_length,output_size)
         generated_data = torch.cat((generated_data,classes),2)
 
-        true_data = data_input["Melody"].view(batch_size, sequence_length, input_size) # batch_size X 784
+        true_data = data_input["Melody"].view(batch_size, sequence_length, input_size)
         digit_labels = data_input["Chords"].view(batch_size,sequence_length,output_size)
         true_data = torch.cat((true_data,digit_labels),2).to(device)
         true_labels = torch.ones(batch_size).to(device)
@@ -133,10 +89,9 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         generator_optimizer.zero_grad()
         
         # It's a choice to generate the data again
-        generated_data = generator(noise).view(batch_size,sequence_length,output_size) # batch_size X 784
+        generated_data = generator(noise).view(batch_size,sequence_length,output_size)
         generated_data = torch.cat((generated_data,classes),2)
         # Forward pass with the generated data
-        #print(generated_data.size())
         discriminator_output_on_generated_data = discriminator(generated_data).view(batch_size)
         # Compute loss
         generator_loss = loss(discriminator_output_on_generated_data, true_labels)
@@ -146,7 +101,7 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         
         G_loss.append(generator_loss.data.item())
         # Evaluate the model
-        if ((batch_idx + 1)% 500 == 0 and (epoch_idx + 1)%10 == 0):
+        if ((batch_idx + 1)% 200 == 0 and (epoch_idx + 1)%10 == 0):
             print("Training Steps Completed: ", batch_idx)
             
             with torch.no_grad():
@@ -159,7 +114,11 @@ for epoch_idx in range(training_parameters["n_epochs"]):
                     print(x)
                     break
 
-
+    mean_D_loss = torch.mean(torch.FloatTensor(D_loss))
+    mean_G_loss = torch.mean(torch.FloatTensor(G_loss))
+    Overall_G_Loss.append(mean_G_loss)
+    Overall_D_loss.append(mean_D_loss)
     print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
-            (epoch_idx), training_parameters["n_epochs"], torch.mean(torch.FloatTensor(D_loss)), torch.mean(torch.FloatTensor(G_loss))))
-    
+            (epoch_idx), training_parameters["n_epochs"], mean_D_loss, mean_G_loss))
+x = [i for i in range(training_parameters["n_epochs"])]
+plt.plot("Epoch Number", "Loss", x, mean_D_loss, x, mean_G_loss)
