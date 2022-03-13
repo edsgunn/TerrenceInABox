@@ -2,6 +2,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as f
 from torch import optim as optim
 from matplotlib import pyplot as plt
 from DataLoader import MusicDataset
@@ -53,7 +54,9 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         # Forward pass     
         generated_data = generator(noise)
         generated_data = generated_data.view(batch_size,sequence_length,output_size)
-        generated_data = torch.cat((generated_data,classes),2)
+        one_hot_generated_data = generated_data.argmax(2)
+        one_hot_generated_data = f.one_hot(one_hot_generated_data, num_classes = output_size)
+        one_hot_generated_data = torch.cat((one_hot_generated_data,classes),2)
 
         true_data = data_input["Melody"].view(batch_size, sequence_length, input_size)
         digit_labels = data_input["Chords"].view(batch_size,sequence_length,output_size)
@@ -67,7 +70,7 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         # Compute Loss
         true_discriminator_loss = loss(discriminator_output_for_true_data, true_labels)
         # Forward pass with generated data as input
-        discriminator_output_for_generated_data = discriminator(generated_data.detach()).view(batch_size)
+        discriminator_output_for_generated_data = discriminator(one_hot_generated_data.detach()).view(batch_size)
         # Compute Loss 
         generator_discriminator_loss = loss(
             discriminator_output_for_generated_data, torch.zeros(batch_size).to(device)
@@ -90,9 +93,11 @@ for epoch_idx in range(training_parameters["n_epochs"]):
         
         # It's a choice to generate the data again
         generated_data = generator(noise).view(batch_size,sequence_length,output_size)
-        generated_data = torch.cat((generated_data,classes),2)
+        one_hot_generated_data = generated_data.argmax(2)
+        one_hot_generated_data = f.one_hot(one_hot_generated_data, num_classes = output_size)
+        one_hot_generated_data = torch.cat((one_hot_generated_data,classes),2)
         # Forward pass with the generated data
-        discriminator_output_on_generated_data = discriminator(generated_data).view(batch_size)
+        discriminator_output_on_generated_data = discriminator(one_hot_generated_data).view(batch_size)
         # Compute loss
         generator_loss = loss(discriminator_output_on_generated_data, true_labels)
         # Backpropagate losses for Generator model.
@@ -122,3 +127,4 @@ for epoch_idx in range(training_parameters["n_epochs"]):
             (epoch_idx), training_parameters["n_epochs"], mean_D_loss, mean_G_loss))
 x = [i for i in range(training_parameters["n_epochs"])]
 plt.plot("Epoch Number", "Loss", x, mean_D_loss, x, mean_G_loss)
+plt.show()
