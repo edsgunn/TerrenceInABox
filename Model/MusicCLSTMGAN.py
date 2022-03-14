@@ -44,9 +44,10 @@ def train_model(model, opt):
             # Forward pass     
             generated_data = generator(noise)
             generated_data = generated_data.view(batch_size,sequence_length,opt.output_size)
-            one_hot_generated_data = generated_data.argmax(2)
-            one_hot_generated_data = f.one_hot(one_hot_generated_data, num_classes = opt.output_size)
-            one_hot_generated_data = torch.cat((one_hot_generated_data,classes),2)
+            if opt.one_hot:
+                generated_data = generated_data.argmax(2)
+                generated_data = f.one_hot(generated_data, num_classes = opt.output_size)
+            generated_data = torch.cat((generated_data,classes),2)
 
             true_data = data_input["Melody"].view(batch_size, sequence_length, opt.input_size)
             digit_labels = data_input["Chords"].view(batch_size,sequence_length,opt.output_size)
@@ -60,7 +61,7 @@ def train_model(model, opt):
             # Compute Loss
             true_discriminator_loss = loss(discriminator_output_for_true_data, true_labels)
             # Forward pass with generated data as input
-            discriminator_output_for_generated_data = discriminator(one_hot_generated_data.detach()).view(batch_size)
+            discriminator_output_for_generated_data = discriminator(generated_data.detach()).view(batch_size)
             # Compute Loss 
             generator_discriminator_loss = loss(
                 discriminator_output_for_generated_data, torch.zeros(batch_size).to(opt.device)
@@ -83,11 +84,12 @@ def train_model(model, opt):
             
             # It's a choice to generate the data again
             generated_data = generator(noise).view(batch_size, sequence_length, opt.output_size)
-            one_hot_generated_data = generated_data.argmax(2)
-            one_hot_generated_data = f.one_hot(one_hot_generated_data, num_classes = opt.output_size)
-            one_hot_generated_data = torch.cat((one_hot_generated_data,classes),2)
+            if opt.one_hot:
+                generated_data = generated_data.argmax(2)
+                generated_data = f.one_hot(generated_data, num_classes = opt.output_size)   
+            generated_data = torch.cat((generated_data,classes),2)
             # Forward pass with the generated data
-            discriminator_output_on_generated_data = discriminator(one_hot_generated_data).view(batch_size)
+            discriminator_output_on_generated_data = discriminator(generated_data).view(batch_size)
             # Compute loss
             generator_loss = loss(discriminator_output_on_generated_data, true_labels)
             # Backpropagate losses for Generator model.
@@ -104,7 +106,7 @@ def train_model(model, opt):
                     noise = torch.cat((noise,classes),2).to(opt.device)
                     generated_data = generator(noise).cpu().view(batch_size, sequence_length, opt.output_size)
                     for x in generated_data:
-                        print(x)
+                        print(x[1,:])
                         break
 
         mean_D_loss = torch.mean(torch.FloatTensor(D_loss))
@@ -146,7 +148,7 @@ def main():
     parser.add_argument('-printevery', type=int, default=10)                            #How often to print example of progress in number of epochs
     # parser.add_argument('-load')
     # parser.add_argument('-save', action='store_true')
-    parser.add_argument('-generate', action='store_true')
+    # parser.add_argument('-generate', action='store_true')
 
     opt = parser.parse_args()
 
@@ -154,7 +156,7 @@ def main():
     opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     opt.dataset = MusicDataset(opt.max_seqlen)
     discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.n_layers, 1)
-    generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size*opt.dataset.max_length)
+    generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size)
 
     model = {
         "Generator" : generator,
