@@ -30,7 +30,7 @@ class MusicDataset(Dataset):
             self.melody[i] = m(self.melody[i]).float()
         # print(max([l for l in lengths if l < 613]))
         # print(lengths.index(max_length))
-        # plt.hist(lengths, bins = [i for i in range(849)])
+        # plt.hist(lengths, bins = [i for i in range(self.max_length+1)])
         # plt.show()
 
     def __len__(self):
