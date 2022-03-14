@@ -1,5 +1,6 @@
 ##Made following the tutorial at https://medium.com/analytics-vidhya/step-by-step-implementation-of-conditional-generative-adversarial-networks-54e4b47497d6
 
+import os
 import argparse 
 import torch
 import torch.nn as nn
@@ -116,6 +117,15 @@ def train_model(model, opt):
         print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
                 (epoch_idx), opt.epochs, mean_D_loss, mean_G_loss))
     x = [i for i in range(opt.epochs)]
+    if opt.save:
+        max_path_index = 0
+        for file in os.listdir(opt.save_dir+"/generators"):
+            max_path_index = max(max_path_index,int(file.split('_')[-1]))
+        torch.save(generator.state_dict(), f"{opt.save_dir}/generators/generator_{max_path_index+1}.pt")
+        max_path_index = 0
+        for file in os.listdir(opt.save_dir+"/discriminators"):
+            max_path_index = max(max_path_index,int(file.split('_')[-1]))
+        torch.save(discriminator.state_dict(), f"{opt.save_dir}/discriminators/discriminator_{max_path_index+1}.pt")
     plt.plot(x, Overall_D_loss, label = "Discriminator Loss")
     plt.plot(x, Overall_G_Loss, label = "Generator Loss")
     plt.xlabel("Epoch Number")
@@ -147,7 +157,8 @@ def main():
     parser.add_argument('-epochs', type=int, default=100)                               #Number of epochs
     parser.add_argument('-printevery', type=int, default=10)                            #How often to print example of progress in number of epochs
     # parser.add_argument('-load')
-    # parser.add_argument('-save', action='store_true')
+    parser.add_argument('-save', action='store_true')
+    parser.add_argument('-save_dir', type=str, default='./Model/saved_models')
     # parser.add_argument('-generate', action='store_true')
 
     opt = parser.parse_args()
