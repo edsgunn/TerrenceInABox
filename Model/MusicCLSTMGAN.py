@@ -13,17 +13,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Running on:",device)
 
 training_parameters = {
-    "n_epochs": 1000,
+    "n_epochs": 10,
     "batch_size": 10,
 }
 
 
 
 input_size = 12
-hidden_size = 128
+hidden_size = 256
 num_layers = 2
 output_size = 24
-noise_size = 4
+noise_size = 24
 max_sequence_length = 200
 
 dataset = MusicDataset(max_sequence_length)
@@ -126,5 +126,8 @@ for epoch_idx in range(training_parameters["n_epochs"]):
     print('[%d/%d]: loss_d: %.3f, loss_g: %.3f' % (
             (epoch_idx), training_parameters["n_epochs"], mean_D_loss, mean_G_loss))
 x = [i for i in range(training_parameters["n_epochs"])]
-plt.plot("Epoch Number", "Loss", x, mean_D_loss, x, mean_G_loss)
+plt.plot(x, Overall_D_loss, label = "Discriminator Loss")
+plt.plot(x, Overall_G_Loss, label = "Generator Loss")
+plt.xlabel("Epoch Number")
+plt.ylabel("Loss")
 plt.show()
