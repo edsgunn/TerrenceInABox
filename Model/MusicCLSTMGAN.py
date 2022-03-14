@@ -16,7 +16,7 @@ def train_model(model, opt):
 
     print("Running on:",opt.device)
 
-
+    print("Loading Dataset")
     data_loader = torch.utils.data.DataLoader(opt.dataset,batch_size=opt.batch_size, shuffle=True)
 
     sequence_length = opt.dataset.max_length
@@ -28,7 +28,7 @@ def train_model(model, opt):
     discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
     generator_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
 
-
+    print("Starting Training")
     Overall_G_Loss = []
     Overall_D_loss = []
     for epoch_idx in range(opt.epochs):
@@ -154,6 +154,7 @@ def main():
 
     # if opt.generate:
     opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Preparing Dataset")
     opt.dataset = MusicDataset(opt.max_seqlen)
     discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.n_layers, 1)
     generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size)
@@ -162,6 +163,7 @@ def main():
         "Generator" : generator,
         "Discriminator" : discriminator
     }
+
     train_model(model, opt)
 
 if __name__ == "__main__":
