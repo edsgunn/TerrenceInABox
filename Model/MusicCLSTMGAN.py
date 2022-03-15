@@ -170,8 +170,9 @@ def main():
     print("Preparing Dataset")
     opt.dataset = MusicDataset(opt.max_seqlen)
     if opt.load:
-        discriminator = torch.load(f"{opt.load_dir}/discriminators/discriminator_{opt.model_num}")
-        generator = torch.load(f"{opt.load_dir}/generators/generator_{opt.model_num}")
+        print("Loading Model")
+        discriminator = torch.load(f"{opt.load_dir}/discriminators/discriminator_{opt.model_num}.pt")
+        generator = torch.load(f"{opt.load_dir}/generators/generator_{opt.model_num}.pt")
     else:
         discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.n_layers, 1)
         generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size)

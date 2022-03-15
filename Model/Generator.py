@@ -10,6 +10,7 @@ class LSTM_Generator_Model(nn.Module):
         self.output_size = output_size
         self.device = device
         self.lstm1 = nn.LSTM(input_size, output_size, num_layers, batch_first=True, bidirectional=False)
+        self.softmax = nn.Softmax(dim=2)
         # self.lstm2 = nn.LSTM(hidden_size, output_size, 1, batch_first=True, bidirectional=False)
         pass
     
@@ -20,6 +21,7 @@ class LSTM_Generator_Model(nn.Module):
         
         # Passing in the input and hidden state into the model and  obtaining outputs
         out, hidden = self.lstm1(x, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
+        out = self.softmax(out)
 
         # h1 = torch.zeros(1, out.size(0), self.output_size).to(self.device) 
         # c1 = torch.zeros(1, out.size(0), self.output_size).to(self.device)
