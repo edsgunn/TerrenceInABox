@@ -120,11 +120,11 @@ def train_model(model, opt):
     if opt.save:
         max_path_index = 0
         for file in os.listdir(opt.save_dir+"/generators"):
-            max_path_index = max(max_path_index,int(file.split('_')[-1]))
+            max_path_index = max(max_path_index,int(file.split('_')[-1][:-3]))
         torch.save(generator.state_dict(), f"{opt.save_dir}/generators/generator_{max_path_index+1}.pt")
         max_path_index = 0
         for file in os.listdir(opt.save_dir+"/discriminators"):
-            max_path_index = max(max_path_index,int(file.split('_')[-1]))
+            max_path_index = max(max_path_index,int(file.split('_')[-1][:-3]))
         torch.save(discriminator.state_dict(), f"{opt.save_dir}/discriminators/discriminator_{max_path_index+1}.pt")
     plt.plot(x, Overall_D_loss, label = "Discriminator Loss")
     plt.plot(x, Overall_G_Loss, label = "Generator Loss")
