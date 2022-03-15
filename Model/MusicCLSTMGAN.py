@@ -121,11 +121,11 @@ def train_model(model, opt):
         max_path_index = 0
         for file in os.listdir(opt.save_dir+"/generators"):
             max_path_index = max(max_path_index,int(file.split('_')[-1][:-3]))
-        torch.save(generator.state_dict(), f"{opt.save_dir}/generators/generator_{max_path_index+1}.pt")
+        torch.save(generator, f"{opt.save_dir}/generators/generator_{max_path_index+1}.pt")
         max_path_index = 0
         for file in os.listdir(opt.save_dir+"/discriminators"):
             max_path_index = max(max_path_index,int(file.split('_')[-1][:-3]))
-        torch.save(discriminator.state_dict(), f"{opt.save_dir}/discriminators/discriminator_{max_path_index+1}.pt")
+        torch.save(discriminator, f"{opt.save_dir}/discriminators/discriminator_{max_path_index+1}.pt")
     plt.plot(x, Overall_D_loss, label = "Discriminator Loss")
     plt.plot(x, Overall_G_Loss, label = "Generator Loss")
     plt.xlabel("Epoch Number")
@@ -155,8 +155,10 @@ def main():
     parser.add_argument('-one_hot', action='store_true')                                #Whether the generator output is converted to one hot or not
     parser.add_argument('-batch_size', type=int, default=10)                            #Batch size
     parser.add_argument('-epochs', type=int, default=100)                               #Number of epochs
-    parser.add_argument('-printevery', type=int, default=10)                            #How often to print example of progress in number of epochs
-    # parser.add_argument('-load')
+    parser.add_argument('-printevery', type=int, default=10)   
+    parser.add_argument('-load', action='store_true')                         #How often to print example of progress in number of epochs
+    parser.add_argument('-load_dir', type=str, default='./Model/saved_models')
+    parser.add_argument('-model_num', type=str, default=1)
     parser.add_argument('-save', action='store_true')
     parser.add_argument('-save_dir', type=str, default='./Model/saved_models')
     # parser.add_argument('-generate', action='store_true')
@@ -167,8 +169,13 @@ def main():
     opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Preparing Dataset")
     opt.dataset = MusicDataset(opt.max_seqlen)
-    discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.n_layers, 1)
-    generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size)
+    if opt.load:
+        discriminator = torch.load(f"{opt.load_dir}/discriminators/discriminator_{opt.model_num}")
+        generator = torch.load(f"{opt.load_dir}/generators/generator_{opt.model_num}")
+    else:
+        discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.n_layers, 1)
+        generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size)
+    
 
     model = {
         "Generator" : generator,
