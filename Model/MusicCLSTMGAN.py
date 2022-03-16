@@ -146,7 +146,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-input_size', type=int, default=12)                            #Size of melody vector (shouldn't be specified often)
-    parser.add_argument('-output_size', type=int, default=24)                           #Size of chord vector (shouldn't be specified often)
+    parser.add_argument('-output_size', type=int, default=25)                           #Size of chord vector (shouldn't be specified often)
     parser.add_argument('-h_size', type=int, default=128)                               #Size of hidden layer
     parser.add_argument('-n_layers', type=int, default=2)                               #Number of LSTM layers
     parser.add_argument('-noise_size', type=int, default=12)                            #Size of noise vector

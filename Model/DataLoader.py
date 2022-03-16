@@ -15,7 +15,7 @@ class MusicDataset(Dataset):
             f = pd.read_csv(file)
             melody = f.iloc[:,[i for i in range(12)]].values
             melody = torch.tensor(melody)
-            chord = f.iloc[:,[i for i in range(12,36)]].values
+            chord = f.iloc[:,[i for i in range(12,37)]].values
             chord = torch.tensor(chord)
             length = f.shape[0]
             if length < length_limit:
@@ -24,9 +24,11 @@ class MusicDataset(Dataset):
                 lengths.append(f.shape[0])
         self.max_length = max(lengths)
         for i in range(len(self.chords)):
-            diff = self.max_length-len(self.chords[i])
+            l = len(self.chords[i])
+            diff = self.max_length-l
             m = nn.ConstantPad2d((0, 0, 0, diff), 0)
             self.chords[i] = m(self.chords[i]).float()
+            self.chords[i][l:,-1] = torch.ones(diff)
             self.melody[i] = m(self.melody[i]).float()
         # print(max([l for l in lengths if l < 613]))
         # print(lengths.index(max_length))
