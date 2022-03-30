@@ -142,6 +142,60 @@ def train_model(model, opt):
 # noise_size = 24
 # max_sequence_length = 1000
 
+def train_LSTM(opt):
+    print("Running on:",opt.device)
+
+    print("Loading Dataset")
+    data_loader = torch.utils.data.DataLoader(opt.dataset,batch_size=opt.batch_size, shuffle=True)
+
+    sequence_length = opt.dataset.max_length
+    generator = LSTM_Generator_Model(opt.device ,opt.input_size, opt.h_size, opt.n_layers, opt.output_size)
+    generator.to(opt.device)
+    loss = nn.MSELoss(reduction='mean')
+    generator_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
+    
+
+    print("Starting Training")
+    Overall_G_Loss = []
+    for epoch_idx in range(opt.epochs):
+        G_loss = []
+        for batch_idx, data_input in enumerate(data_loader):
+            classes = data_input["Melody"].to(opt.device)
+            batch_size = classes.size(dim=0)
+            # Forward pass     
+            generated_data = generator(classes)
+            generated_data = generated_data.view(batch_size,sequence_length,opt.output_size)
+            chords = data_input["Chords"].view(batch_size,sequence_length,opt.output_size)
+            # print(generated_data.size(), chords.size())
+            generator_loss = loss(generated_data, chords)
+
+            generator_loss.backward()
+            generator_optimizer.step()
+
+            G_loss.append(generator_loss.data.item())
+            # Evaluate the model
+            if ((batch_idx  == 0) and (epoch_idx + 1)%opt.printevery == 0):                
+                with torch.no_grad():
+                    classes = data_input["Melody"]
+                    batch_size = classes.size(dim=0)
+                    generated_data = generator(classes).cpu().view(batch_size, sequence_length, opt.output_size)
+                    for x in generated_data:
+                        print(x[1,:])
+                        break
+
+        mean_G_loss = torch.mean(torch.FloatTensor(G_loss))
+        Overall_G_Loss.append(mean_G_loss)
+        print('[%d/%d]: loss_g: %.3f' % (
+                (epoch_idx), opt.epochs, mean_G_loss))
+
+        
+    plt.plot(x, Overall_G_Loss, label = "Generator Loss")
+    plt.xlabel("Epoch Number")
+    plt.ylabel("Loss")
+    plt.show()
+
+
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -184,6 +238,7 @@ def main():
     }
 
     train_model(model, opt)
+    # train_LSTM(opt)
 
 if __name__ == "__main__":
     main()
