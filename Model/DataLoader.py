@@ -6,19 +6,20 @@ import torch
 # import matplotlib.pyplot as plt
 
 class MusicDataset(Dataset):
-    def __init__(self, length_limit):
+    def __init__(self, opt):
         self.chords = []
         self.melody = []
         lengths = []
-        data_dir = "./transformed_dataset/processed_train"
-        for file in glob.glob(f"{data_dir}/*.csv"):
+        for file in glob.glob(f"{opt.src_data}/*.csv"):
             f = pd.read_csv(file)
             melody = f.iloc[:,[i for i in range(12)]].values
+            if melody.size == 0:
+                continue
             melody = torch.tensor(melody)
             chord = f.iloc[:,[i for i in range(12,37)]].values
             chord = torch.tensor(chord)
             length = f.shape[0]
-            if length < length_limit:
+            if length < opt.max_seqlen:
                 self.chords.append(chord)
                 self.melody.append(melody)
                 lengths.append(f.shape[0])
@@ -31,7 +32,7 @@ class MusicDataset(Dataset):
             self.chords[i][l:,-1] = torch.ones(diff)
             self.melody[i] = m(self.melody[i]).float()
         # print(max([l for l in lengths if l < 613]))
-        # print(lengths.index(max_length))
+        # print(lengths.index(self.max_length))
         # plt.hist(lengths, bins = [i for i in range(self.max_length+1)])
         # plt.show()
 

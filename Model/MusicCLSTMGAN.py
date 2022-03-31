@@ -205,7 +205,7 @@ def main():
     parser.add_argument('-n_layers', type=int, default=2)                               #Number of LSTM layers
     parser.add_argument('-noise_size', type=int, default=12)                            #Size of noise vector
     parser.add_argument('-max_seqlen', type=int, default=200)                           #Sequence length limit
-    parser.add_argument('-src_data', default='./transformed_dataset/processed_train')   #Path to dataset
+    parser.add_argument('-src_data', default='./Data/LSTM/LSTM_data_correct/processed_train')   #Path to dataset
     parser.add_argument('-one_hot', action='store_true')                                #Whether the generator output is converted to one hot or not
     parser.add_argument('-batch_size', type=int, default=10)                            #Batch size
     parser.add_argument('-epochs', type=int, default=100)                               #Number of epochs
@@ -222,7 +222,7 @@ def main():
     # if opt.generate:
     opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Preparing Dataset")
-    opt.dataset = MusicDataset(opt.max_seqlen)
+    opt.dataset = MusicDataset(opt)
     if opt.load:
         print("Loading Model")
         discriminator = torch.load(f"{opt.load_dir}/discriminators/discriminator_{opt.model_num}.pt")

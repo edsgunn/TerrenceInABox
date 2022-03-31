@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+
 def constrainNote(note):
     nums = "0123456789"
     for char in nums:
