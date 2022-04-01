@@ -120,7 +120,7 @@ sig = Piano
 beat = 1.25e2 # 120 bpm
 
 f = pd.read_csv("Model/dataset/csv_train/Hey soul sister.csv")
-print(f[["note_root","note_duration","chord_root","key_mode"]])
+# print(f[["note_root","note_duration","chord_root","key_mode"]])
 time_sig = f["time"][0]
 beats = int(time_sig[0])
 semiquavers = 16/int(time_sig[2])
