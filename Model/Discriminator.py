@@ -10,12 +10,12 @@ class LSTM_Discriminator_Model(nn.Module):
         self.num_layers = num_layers
         self.device = device
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, bidirectional=False)
-        self.fc_layer = nn.Linear(hidden_size, output_size)
-        self.sigmoid = nn.Sigmoid()
-        # self.fc = nn.Sequential(
-        #     nn.Linear(hidden_size, output_size),
-        #     nn.Sigmoid()
-        # )
+        # self.fc_layer = nn.Linear(hidden_size, output_size)
+        # self.sigmoid = nn.Sigmoid()
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_size, output_size),
+            nn.Sigmoid()
+        )
         pass
     
     def forward(self, x):
@@ -24,8 +24,8 @@ class LSTM_Discriminator_Model(nn.Module):
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
         # Passing in the input and hidden state into the model and  obtaining outputs
         out, hidden = self.lstm(x, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
-        out = self.fc_layer(out)
-        out = self.sigmoid(out)
+        # out = self.fc_layer(out)
+        # out = self.sigmoid(out)
         #Reshaping the outputs such that it can be fit into the fully connected layer
-        # out = self.fc(out[:, -1, :])
+        out = self.fc(out[:, -1, :])
         return out

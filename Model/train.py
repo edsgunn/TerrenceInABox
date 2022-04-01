@@ -28,7 +28,7 @@ def train_model(model, opt):
     generator = model["Generator"]
     discriminator.to(opt.device)
     generator.to(opt.device)
-    loss = nn.BCELoss(reduction='mean')
+    loss = nn.BCELoss()#reduction='mean')
     discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
     generator_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
 
@@ -56,19 +56,19 @@ def train_model(model, opt):
             true_data = data_input["Melody"].view(batch_size, sequence_length, opt.input_size)
             digit_labels = data_input["Chords"].view(batch_size,sequence_length,opt.output_size)
             true_data = torch.cat((true_data,digit_labels),2).to(opt.device)
-            true_labels = torch.ones(batch_size, sequence_length).to(opt.device)
+            true_labels = torch.ones(batch_size).to(opt.device)#, sequence_length).to(opt.device)
             
             # Clear optimizer gradients        
             discriminator_optimizer.zero_grad()
             # Forward pass with true data as input
-            discriminator_output_for_true_data = discriminator(true_data).view(batch_size, sequence_length)
+            discriminator_output_for_true_data = discriminator(true_data).view(batch_size)#, sequence_length)
             # Compute Loss
             true_discriminator_loss = loss(discriminator_output_for_true_data, true_labels)
             # Forward pass with generated data as input
-            discriminator_output_for_generated_data = discriminator(generated_data.detach()).view(batch_size, sequence_length)
+            discriminator_output_for_generated_data = discriminator(generated_data.detach()).view(batch_size)#, sequence_length)
             # Compute Loss 
             generator_discriminator_loss = loss(
-                discriminator_output_for_generated_data, torch.zeros(batch_size, sequence_length).to(opt.device)
+                discriminator_output_for_generated_data, torch.zeros(batch_size).to(opt.device)#, sequence_length).to(opt.device)
             )
             # Average the loss
             discriminator_loss = (
@@ -93,7 +93,7 @@ def train_model(model, opt):
                 generated_data = f.one_hot(generated_data, num_classes = opt.output_size)   
             generated_data = torch.cat((generated_data,classes),2)
             # Forward pass with the generated data
-            discriminator_output_on_generated_data = discriminator(generated_data).view(batch_size, sequence_length)
+            discriminator_output_on_generated_data = discriminator(generated_data).view(batch_size)#, sequence_length)
             # Compute loss
             generator_loss = loss(discriminator_output_on_generated_data, true_labels)
             # Backpropagate losses for Generator model.
