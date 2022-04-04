@@ -25,8 +25,8 @@ def oneHotToChord(chords):
 def generateChord(melody,model):
     noise = torch.randn(1,183,12)
     noise = torch.cat((noise,melody.view(1,183,12)),2)
-    chord = model(noise)
-    return oneHotToChord(chord.detach().numpy())
+    chord = model(noise.to('cuda:0'))
+    return oneHotToChord(chord.to('cpu').detach().numpy())
 
 def normaliseSong(song):
     # Define all mappings and major keys
@@ -352,6 +352,7 @@ def playChords(melody,chords):
             "G#":["Ab","C","Eb"],
             "Ab":["Ab","C","Eb"],
             "A":["A","C#","E"],
+            "A#":["A#","D", "F"],
             "Bb":["Bb","D","F"],
             "B":["B","D#","F#"]
     }
