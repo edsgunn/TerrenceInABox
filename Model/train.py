@@ -30,7 +30,7 @@ def train_model(model, opt):
     generator.to(opt.device)
     loss = nn.BCELoss()#reduction='mean')
     discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
-    generator_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
+    generator_optimizer = optim.Adam(generator.parameters(), lr=0.0005)
 
     print("Starting Training")
     Overall_G_Loss = []
@@ -45,7 +45,7 @@ def train_model(model, opt):
             batch_size = classes.size(dim=0)
             noise = torch.randn(batch_size,sequence_length,opt.noise_size).to(opt.device)
             noise = torch.cat((noise,classes),2)
-            # Forward pass     
+            # Forward pass 
             generated_data = generator(noise)
             generated_data = generated_data.view(batch_size,sequence_length,opt.output_size)
             if opt.one_hot:
@@ -54,7 +54,7 @@ def train_model(model, opt):
             generated_data = torch.cat((generated_data,classes),2)
 
             true_data = data_input["Melody"].view(batch_size, sequence_length, opt.input_size)
-            digit_labels = data_input["Chords"].view(batch_size,sequence_length,opt.output_size)
+            digit_labels = 0.9*data_input["Chords"].view(batch_size,sequence_length,opt.output_size)
             true_data = torch.cat((true_data,digit_labels),2).to(opt.device)
             true_labels = torch.ones(batch_size).to(opt.device)#, sequence_length).to(opt.device)
             

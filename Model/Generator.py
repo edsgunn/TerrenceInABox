@@ -11,17 +11,17 @@ class LSTM_Generator_Model(nn.Module):
         self.device = device
         self.fc_layer_1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
-        self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True, dropout=0.5, bidirectional=False)
+        self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True, dropout=0.5, bidirectional=True)
         self.dropout1 = nn.Dropout(0.5)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc_layer_2 = nn.Linear(hidden_size, output_size)
+        self.fc_layer_2 = nn.Linear(2*hidden_size, output_size)
         self.softmax = nn.Softmax(dim=2)
         pass
     
     def forward(self, x):
         # Set initial hidden and cell states 
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) 
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device) 
+        c0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device)
         
         # Passing in the input and hidden state into the model and  obtaining outputs
         out = self.dropout1(x)
