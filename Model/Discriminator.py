@@ -3,18 +3,19 @@ import torch
 
 class LSTM_Discriminator_Model(nn.Module):
   
-    def __init__(self, device, input_size, hidden_size, num_layers, output_size):
+    def __init__(self, device, input_size, hidden_size, seq_len, num_layers, output_size):
         super(LSTM_Discriminator_Model, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.num_layers = num_layers
+        self.seq_len = seq_len
         self.device = device
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout = 0.2, bidirectional=True)
         self.tanh = nn.Tanh()
         # self.fc_layer = nn.Linear(hidden_size, output_size)
         # self.sigmoid = nn.Sigmoid()
         self.fc = nn.Sequential(
-            nn.Linear(2*hidden_size, output_size),
+            nn.Linear(2*hidden_size*seq_len, output_size),
             nn.Sigmoid()
         )
         pass
@@ -29,5 +30,6 @@ class LSTM_Discriminator_Model(nn.Module):
         # out = self.fc_layer(out)
         # out = self.sigmoid(out)
         #Reshaping the outputs such that it can be fit into the fully connected layer
-        out = self.fc(out[:, -1, :])
+        out = torch.reshape(out,(-1,2*self.hidden_size*self.seq_len))
+        out = self.fc(out)
         return out

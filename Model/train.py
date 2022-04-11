@@ -112,7 +112,7 @@ def train_model(model, opt):
                     # make_dot(noise, params=dict(list(generator.named_parameters()))).render("Generator_torchviz", format="png")
                     # y = discriminator(torch.cat((data_input["Melody"],data_input["Chords"]),2))
                     # make_dot(y, params=dict(list(discriminator.named_parameters()))).render("Discriminator_torchviz", format="png")
-                    accompanySong(generator,"DON'T STOP BELIEVIN'")
+                    # accompanySong(generator,"DON'T STOP BELIEVIN'")
                     for x in generated_data:
                         print(x[1,:])
                         break
@@ -138,6 +138,19 @@ def train_model(model, opt):
     plt.xlabel("Epoch Number")
     plt.ylabel("Loss")
     plt.show()
+    classes = data_input["Melody"]
+    batch_size = classes.size(dim=0)
+    noise = torch.randn(batch_size,sequence_length,opt.noise_size)
+    noise = torch.cat((noise,classes),2).to(opt.device)
+    generated_data = generator(noise).cpu().view(batch_size, sequence_length, opt.output_size)
+    # make_dot(noise, params=dict(list(generator.named_parameters()))).render("Generator_torchviz", format="png")
+    # y = discriminator(torch.cat((data_input["Melody"],data_input["Chords"]),2))
+    # make_dot(y, params=dict(list(discriminator.named_parameters()))).render("Discriminator_torchviz", format="png")
+    # accompanySong(generator,"DON'T STOP BELIEVIN'")
+    for x in generated_data:
+        print(x)
+        print(x.size())
+        break
 
 # training_parameters = {
 #     "n_epochs": 10,
@@ -235,7 +248,7 @@ def main():
         discriminator = torch.load(f"{opt.load_dir}/discriminators/discriminator_{opt.model_num}.pt")
         generator = torch.load(f"{opt.load_dir}/generators/generator_{opt.model_num}.pt")
     else:
-        discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.n_layers, 1)
+        discriminator = LSTM_Discriminator_Model(opt.device, opt.input_size+opt.output_size, opt.h_size, opt.dataset.max_length, opt.n_layers, 1)
         generator = LSTM_Generator_Model(opt.device ,opt.input_size+opt.noise_size, opt.h_size, opt.n_layers, opt.output_size)
     # print(generator)
     # print(dict(list(generator.named_parameters())))

@@ -10,6 +10,7 @@ class MusicDataset(Dataset):
         self.chords = []
         self.melody = []
         lengths = []
+        i = 0
         for file in glob.glob(f"{opt.src_data}/*.csv"):
             f = pd.read_csv(file)
             melody = f.iloc[:,[i for i in range(12)]].values
@@ -23,6 +24,8 @@ class MusicDataset(Dataset):
                 self.chords.append(chord)
                 self.melody.append(melody)
                 lengths.append(f.shape[0])
+            if i==30: break
+            i+=1
         self.max_length = max(lengths)
         for i in range(len(self.chords)):
             l = len(self.chords[i])
