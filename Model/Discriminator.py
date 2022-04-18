@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 class LSTM_Discriminator_Model(nn.Module):
-  
+    
     def __init__(self, device, input_size, hidden_size, seq_len, num_layers, output_size):
         super(LSTM_Discriminator_Model, self).__init__()
         self.hidden_size = hidden_size
@@ -19,13 +19,14 @@ class LSTM_Discriminator_Model(nn.Module):
             nn.Sigmoid()
         )
         pass
+
     
     def forward(self, x):
         # Set initial hidden and cell states 
-        h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device) 
-        c0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        # h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device) 
+        # c0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device)
         # Passing in the input and hidden state into the model and  obtaining outputs
-        out, hidden = self.lstm(x, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
+        out, hidden = self.lstm(x)  # out: tensor of shape (batch_size, seq_length, hidden_size)
         out = self.tanh(out)
         # out = self.fc_layer(out)
         # out = self.sigmoid(out)

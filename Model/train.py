@@ -147,10 +147,12 @@ def train_model(model, opt):
     # y = discriminator(torch.cat((data_input["Melody"],data_input["Chords"]),2))
     # make_dot(y, params=dict(list(discriminator.named_parameters()))).render("Discriminator_torchviz", format="png")
     # accompanySong(generator,"DON'T STOP BELIEVIN'")
+    i = 0
     for x in generated_data:
         print(x)
         print(x.size())
-        break
+        i +=1
+        if i == 3: break
 
 # training_parameters = {
 #     "n_epochs": 10,

@@ -19,16 +19,17 @@ class LSTM_Generator_Model(nn.Module):
         self.softmax = nn.Softmax(dim=2)
         pass
     
+
     def forward(self, x):
         # Set initial hidden and cell states 
-        h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device) 
-        c0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device)
+        # h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device) 
+        # c0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(self.device)
         
         # Passing in the input and hidden state into the model and  obtaining outputs
         out = self.fc_layer_1(x)
         out = self.dropout1(out)
         out = self.relu(out)
-        out, hidden = self.lstm(out, (h0, c0))  # out: tensor of shape (batch_size, seq_length, hidden_size)
+        out, hidden = self.lstm(out)  # out: tensor of shape (batch_size, seq_length, hidden_size)
         out = self.tanh(out)
         out = self.fc_layer_2(out)
         out = self.softmax(out)
